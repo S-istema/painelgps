@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>📡 GPS Tracker - Painel</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="app">
+
+    <!-- ===== SIDEBAR ===== -->
+    <aside class="sb" id="sb">
+        <div class="sb-top">
+            <div class="sb-logo">
+                <div class="logo-box"><i class="fas fa-satellite-dish"></i></div>
+                <div>
+                    <div class="logo-txt">GPS Tracker</div>
+                    <div class="logo-sub">Painel v2.0</div>
+                </div>
+            </div>
+            <button class="ibtn" id="btn-collapse" title="Fechar"><i class="fas fa-angles-left"></i></button>
+        </div>
+
+        <div class="stats">
+            <div class="stat"><div class="stat-n" id="s-total">0</div><div class="stat-l">Total</div></div>
+            <div class="stat"><div class="stat-n on" id="s-on">0</div><div class="stat-l">Online</div></div>
+            <div class="stat"><div class="stat-n off" id="s-off">0</div><div class="stat-l">Offline</div></div>
+        </div>
+
+        <div class="tabs">
+            <button class="tab on" data-tab="devices"><i class="fas fa-mobile-screen"></i><span>Dispositivos</span><span class="tab-badge" id="t-count">0</span></button>
+            <button class="tab" data-tab="history"><i class="fas fa-clock-rotate-left"></i><span>Histórico</span></button>
+            <button class="tab" data-tab="settings"><i class="fas fa-gear"></i><span>Config</span></button>
+        </div>
+
+        <div class="sb-body">
+            <!-- Devices -->
+            <div class="panel on" id="p-devices">
+                <div class="search"><i class="fas fa-search"></i><input type="text" id="inp-search" placeholder="Buscar..."></div>
+                <div class="chips">
+                    <button class="chip on" data-f="all">Todos</button>
+                    <button class="chip" data-f="online">Online</button>
+                    <button class="chip" data-f="offline">Offline</button>
+                </div>
+                <div class="devlist" id="devlist"><div class="empty"><i class="fas fa-satellite-dish"></i><p>Aguardando dispositivos...</p></div></div>
+            </div>
+            <!-- History -->
+            <div class="panel" id="p-history">
+                <div class="chips">
+                    <button class="chip on" data-hf="all">Todos</button>
+                    <button class="chip" data-hf="new">Novos</button>
+                    <button class="chip" data-hf="connect">Conexão</button>
+                    <button class="chip" data-hf="disconnect">Desc.</button>
+                </div>
+                <div class="hlist" id="hlist"><div class="empty"><i class="fas fa-clock-rotate-left"></i><p>Sem eventos.</p></div></div>
+            </div>
+            <!-- Settings -->
+            <div class="panel" id="p-settings">
+                <div class="sblock">
+                    <div class="sblock-title"><i class="fas fa-rotate"></i> Atualização</div>
+                    <div class="srow"><div class="srow-info"><div class="st">Auto-refresh</div></div><label class="tog"><input type="checkbox" id="tog-auto" checked><span class="tog-bg"></span></label></div>
+                    <div class="srow"><div class="srow-info"><div class="st">Intervalo</div></div><select class="s-sel" id="sel-int"><option value="5000">5s</option><option value="10000" selected>10s</option><option value="30000">30s</option><option value="60000">1min</option></select></div>
+                </div>
+                <div class="sblock">
+                    <div class="sblock-title"><i class="fas fa-map"></i> Mapa</div>
+                    <div class="srow"><div class="srow-info"><div class="st">Trilhas</div><div class="sd">Mostrar caminho</div></div><label class="tog"><input type="checkbox" id="tog-trails" checked><span class="tog-bg"></span></label></div>
+                    <div class="srow"><div class="srow-info"><div class="st">Círculo de precisão</div></div><label class="tog"><input type="checkbox" id="tog-acc" checked><span class="tog-bg"></span></label></div>
+                </div>
+                <div class="sblock">
+                    <div class="sblock-title"><i class="fas fa-bell"></i> Alertas</div>
+                    <div class="srow"><div class="srow-info"><div class="st">Novo dispositivo</div></div><label class="tog"><input type="checkbox" id="tog-newdev" checked><span class="tog-bg"></span></label></div>
+                    <div class="srow"><div class="srow-info"><div class="st">Dispositivo offline</div></div><label class="tog"><input type="checkbox" id="tog-offdev" checked><span class="tog-bg"></span></label></div>
+                    <div class="srow"><div class="srow-info"><div class="st">Som</div></div><label class="tog"><input type="checkbox" id="tog-sound" checked><span class="tog-bg"></span></label></div>
+                </div>
+                <div class="sblock">
+                    <div class="sblock-title"><i class="fas fa-database"></i> Dados</div>
+                    <button class="abtn" id="btn-expjson"><i class="fas fa-file-arrow-down"></i> Exportar JSON</button>
+                    <button class="abtn" id="btn-expcsv"><i class="fas fa-file-csv"></i> Exportar CSV</button>
+                    <button class="abtn red" id="btn-clear"><i class="fas fa-trash-can"></i> Limpar histórico</button>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <!-- ===== MAIN ===== -->
+    <main class="main">
+        <div class="topbar">
+            <div class="topbar-l">
+                <button class="ibtn" id="btn-menu"><i class="fas fa-bars"></i></button>
+                <div class="conn"><div class="cdot" id="cdot"></div><span id="clabel">Conectando...</span></div>
+                <div class="live" id="live"><span class="live-dot"></span>LIVE</div>
+            </div>
+            <div class="topbar-r">
+                <span class="last-u" id="last-u">--</span>
+                <button class="ibtn" id="btn-ref" title="Atualizar"><i class="fas fa-arrows-rotate"></i></button>
+                <button class="ibtn" id="btn-fit" title="Ver todos"><i class="fas fa-expand"></i></button>
+                <button class="ibtn" id="btn-notif" title="Notificações"><i class="fas fa-bell"></i><span class="nbadge" id="nbadge">0</span></button>
+            </div>
+        </div>
+        <div class="mapwrap">
+            <div id="map"></div>
+            <!-- Detail Panel -->
+            <div class="dp" id="dp">
+                <div class="dp-head">
+                    <div class="dp-av" id="dp-av"><i class="fas fa-mobile-screen"></i></div>
+                    <div class="dp-tblock"><div class="dp-name" id="dp-name">--</div><div class="dp-sub" id="dp-sub">--</div></div>
+                    <div class="dp-status" id="dp-badge">Offline</div>
+                    <button class="ibtn" id="dp-x"><i class="fas fa-times"></i></button>
+                </div>
+                <div class="dp-body">
+                    <div class="dp-grid">
+                        <div class="dp-g"><i class="fas fa-location-dot"></i><div class="dp-gv" id="dp-lat">--</div><div class="dp-gl">Lat</div></div>
+                        <div class="dp-g"><i class="fas fa-location-dot"></i><div class="dp-gv" id="dp-lng">--</div><div class="dp-gl">Lng</div></div>
+                        <div class="dp-g"><i class="fas fa-gauge-high"></i><div class="dp-gv" id="dp-spd">--</div><div class="dp-gl">Velocidade</div></div>
+                        <div class="dp-g"><i class="fas fa-bullseye"></i><div class="dp-gv" id="dp-acc">--</div><div class="dp-gl">Precisão</div></div>
+                        <div class="dp-g"><i class="fas fa-mountain"></i><div class="dp-gv" id="dp-alt">--</div><div class="dp-gl">Altitude</div></div>
+                        <div class="dp-g"><i class="fas fa-battery-three-quarters" id="dp-bati"></i><div class="dp-gv" id="dp-bat">--</div><div class="dp-gl">Bateria</div></div>
+                        <div class="dp-g"><i class="fas fa-clock"></i><div class="dp-gv" id="dp-seen">--</div><div class="dp-gl">Último</div></div>
+                        <div class="dp-g"><i class="fas fa-paper-plane"></i><div class="dp-gv" id="dp-sends">--</div><div class="dp-gl">Envios</div></div>
+                    </div>
+                    <div class="dp-sec">
+                        <div class="dp-sec-t"><i class="fas fa-microchip"></i> Dispositivo</div>
+                        <div class="dp-row"><span>SO</span><strong id="dp-os">--</strong></div>
+                        <div class="dp-row"><span>Navegador</span><strong id="dp-brow">--</strong></div>
+                        <div class="dp-row"><span>Primeiro sinal</span><strong id="dp-first">--</strong></div>
+                        <div class="dp-row"><span>ID</span><strong id="dp-id" style="font-size:10px">--</strong></div>
+                    </div>
+                    <div class="dp-btns">
+                        <button class="dp-btn" id="dp-copy"><i class="fas fa-copy"></i> Copiar</button>
+                        <button class="dp-btn" id="dp-gm"><i class="fab fa-google"></i> Maps</button>
+                        <button class="dp-btn" id="dp-waze"><i class="fas fa-route"></i> Waze</button>
+                        <button class="dp-btn" id="dp-sv"><i class="fas fa-street-view"></i> Street</button>
+                    </div>
+                    <div class="dp-sec">
+                        <div class="dp-sec-t"><i class="fas fa-route"></i> Histórico</div>
+                        <div class="dp-hlist" id="dp-hist"></div>
+                    </div>
+                </div>
+            </div>
+            <!-- Map Controls -->
+            <div class="mctrls">
+                <button class="mc on" id="mc-dark" title="Escuro"><i class="fas fa-moon"></i></button>
+                <button class="mc" id="mc-sat" title="Satélite"><i class="fas fa-earth-americas"></i></button>
+                <button class="mc" id="mc-street" title="Padrão"><i class="fas fa-map"></i></button>
+            </div>
+            <div class="msbar">
+                <div class="msbar-l"><div class="cdot" id="mcdot"></div><span id="mctxt">Desconectado</span></div>
+                <div id="mutxt">--</div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<!-- Overlay -->
+<div class="overlay" id="overlay"></div>
+
+<!-- Notification Panel -->
+<div class="npanel" id="npanel">
+    <div class="np-head">
+        <h3><i class="fas fa-bell"></i> Notificações</h3>
+        <div class="np-acts">
+            <button class="txtbtn" id="btn-clrn">Limpar</button>
+            <button class="ibtn" id="btn-closn"><i class="fas fa-times"></i></button>
+        </div>
+    </div>
+    <div class="np-list" id="nplist"><div class="empty"><i class="fas fa-bell-slash"></i><p>Sem notificações.</p></div></div>
+</div>
+
+<!-- New Device Alert -->
+<div class="ndalert" id="ndalert">
+    <div class="nd-icon"><i class="fas fa-mobile-screen-button"></i></div>
+    <div class="nd-text"><strong>🆕 Novo Dispositivo!</strong><span id="nd-info">--</span></div>
+    <button class="nd-x" id="nd-x"><i class="fas fa-times"></i></button>
+</div>
+
+<!-- Toast Container -->
+<div class="twrap" id="twrap"></div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="script.js"></script>
+</body>
+</html>
